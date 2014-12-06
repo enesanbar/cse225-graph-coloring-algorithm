@@ -9,6 +9,7 @@
 
 // Function prototypes
 void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses);
+void sortCourses(char courseNames[][MAX_LENGTH], int numberOfCourses);
 char *strstrip(char *s);
 void toLowerCase(char *string);
 
@@ -21,11 +22,7 @@ int main(void) {
     char courseNames[MAX_COURSES][MAX_LENGTH];
     int numberOfCourses = 0;
     readCourses(courseNames, &numberOfCourses);
-    //sortCourses(courseNames);
-
-    for(i = 0; i < numberOfCourses; i++){
-        printf("%s\n", courseNames[i]);
-    }
+    sortCourses(courseNames, numberOfCourses);
 
     return 0;
 }
@@ -83,7 +80,28 @@ void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses){
             token = strtok(NULL, ",");
         }
     }
+}
 
+// Sort the course names. There're a few courses, bubble sort seems right.
+void sortCourses(char courseNames[][MAX_LENGTH], int numberOfCourses){
+    int i, k;
+    int needNextPass = 1;
+
+    for(k = 1; k < numberOfCourses && needNextPass; k++){
+        needNextPass = 0;
+
+        for(i = 0; i < numberOfCourses - k; i++){
+            if(strcmp(courseNames[i], courseNames[i + 1]) > 0){
+                // Swap courseNames[i] and courseNames[i + 1]
+                char temp[MAX_LENGTH];
+                strcpy(temp, courseNames[i]);
+                strcpy(courseNames[i], courseNames[i + 1]);
+                strcpy(courseNames[i + 1], temp);
+
+                needNextPass = 1;
+            }
+        }
+    }
 }
 
 // Trim the space characters from the string.
