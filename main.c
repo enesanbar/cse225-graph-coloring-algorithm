@@ -23,13 +23,9 @@ int main(void) {
     readCourses(courseNames, &numberOfCourses);
     //sortCourses(courseNames);
 
-
-
     for(i = 0; i < numberOfCourses; i++){
         printf("%s\n", courseNames[i]);
     }
-
-
 
     return 0;
 }
@@ -69,14 +65,14 @@ void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses){
     while (fgets (buffer, sizeof(buffer), inputFile)) {
         // Get the part of the line after the color ':'
         char *courses = strstr(buffer, ":") + 1;
-        strstrip(courses);  // trim the whitespaces
+        courses = strstrip(courses);  // trim the whitespaces
 
         /* extract the course names off the line. get the first token */
         token = strtok(courses, ",");
 
         /* walk through other tokens */
         while( token != NULL ) {
-            strstrip(token);
+            token = strstrip(token);
 
             // If it doesn't exist, add it to the course list.
             if(!doesCourseExist(courseNames, token, *numberOfCourses)){
@@ -90,8 +86,8 @@ void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses){
 
 }
 
-char *strstrip(char *str)
-{
+// Trim the space characters from the string.
+char *strstrip(char *str){
     size_t len = 0;
     char *frontp = str;
     char *endp = NULL;
@@ -103,41 +99,31 @@ char *strstrip(char *str)
     endp = str + len;
 
     /* Move the front and back pointers to address the first non-whitespace
-     * characters from each end.
-     */
+     * characters from each end. */
     while( isspace(*frontp) ) { ++frontp; }
-    if( endp != frontp )
-    {
+    if( endp != frontp ){
         while( isspace(*(--endp)) && endp != frontp ) {}
     }
 
-    if( str + len - 1 != endp )
-            *(endp + 1) = '\0';
-    else if( frontp != str &&  endp == frontp )
-            *str = '\0';
+    if( str + len - 1 != endp ) *(endp + 1) = '\0';
+    else if( frontp != str &&  endp == frontp ) *str = '\0';
 
     /* Shift the string so that it starts at str so that if it's dynamically
-     * allocated, we can still free it on the returned pointer.  Note the reuse
-     * of endp to mean the front of the string buffer now.
-     */
+     * allocated, we can still free it on the returned pointer */
     endp = str;
-    if( frontp != str )
-    {
-            while( *frontp ) { *endp++ = *frontp++; }
-            *endp = '\0';
+    if( frontp != str )    {
+        while( *frontp ) { *endp++ = *frontp++; }
+        *endp = '\0';
     }
-
 
     return str;
 }
 
-/* To perform case-insensitive comparison,
-   make character lowercase */
+/* To perform case-insensitive comparison, make characters lowercase */
 void toLowerCase(char *string){
     int i = 0;
     while(string[i] != '\0'){
         string[i] = (char)tolower(string[i]);
         i++;
-
     }
 }
