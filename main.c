@@ -37,8 +37,7 @@ int main(void) {
     return 0;
 }
 
-/* While reading from file, checks if the course has been read yet
-   Note: The compiler need to know the 2nd dimension of the two dimensional array */
+/* While reading from file, checks if the course has been read yet */
 int doesCourseExist(char courseName[]){
     if(numberOfCourses == 0) return 0;
 
@@ -52,6 +51,7 @@ int doesCourseExist(char courseName[]){
     return 0;
 }
 
+/* Read the courses from the input file */
 void readCourses(){
     char *readingMode = "r";
 
@@ -148,6 +148,7 @@ AdjListNodePtr createNode(char *vertex){
     return newNode;
 }
 
+/* check if an edge already exists */
 int hasEdge(GraphPtr graph, char vertex1[], char vertex2[]){
     int i;
     for (i = 0; i < graph->numberOfVertices; i++) {
@@ -163,26 +164,64 @@ int hasEdge(GraphPtr graph, char vertex1[], char vertex2[]){
     return 0;
 }
 
-/* Add an edge to a graph*/
+/* add a single edge to the graph*/
 void addEdge(Graph *graph, char *src, char *dest){
+    /* Linked list sorted insertion algorithm */
     int srcIndex = getIndex(src);
+    AdjListNodePtr newNode = createNode(dest);                          /* pointer to new node */
+    AdjListNodePtr previousNode = NULL;                                 /* pointer to previous node in list */
+    AdjListNodePtr currentNode = graph->adjListArray[srcIndex].head;    /* pointer to current node in list */
 
-    /* Add an edge from src to dst in the adjacency list*/
-    AdjListNodePtr newNode = createNode(dest);
-    newNode->next = graph->adjListArray[srcIndex].head;
-    graph->adjListArray[srcIndex].head = newNode;
+    /* loop to find the correct location in the list */
+    while ( currentNode != NULL && strcmp(dest, currentNode->vertex) > 0 ) {
+        previousNode = currentNode;
+        currentNode = currentNode->next;
+    }
+
+    /* insert new node at beginning of list */
+    if ( previousNode == NULL ) {
+        newNode->next = graph->adjListArray[srcIndex].head;
+        graph->adjListArray[srcIndex].head = newNode;
+    }
+    /* insert new node between previousNode and currentNode */
+    else {
+        previousNode->next = newNode;
+        newNode->next = currentNode;
+    }
+
     graph->adjListArray[srcIndex].num_members++;
 
+    /* Add an edge from dest to src also*/
     if(graph->type == UNDIRECTED){
+
+        /* Linked list sorted insertion algorithm */
         int destIndex = getIndex(dest);
-        /* Add an edge from dest to src also*/
-        newNode = createNode(src);
-        newNode->next = graph->adjListArray[destIndex].head;
-        graph->adjListArray[destIndex].head = newNode;
+        AdjListNodePtr newNode2 = createNode(src);                          /* pointer to new node */
+        AdjListNodePtr previousNode2 = NULL;                                 /* pointer to previous node in list */
+        AdjListNodePtr currentNode2 = graph->adjListArray[destIndex].head;    /* pointer to current node in list */
+
+        /* loop to find the correct location in the list */
+        while ( currentNode2 != NULL && strcmp(src, currentNode2->vertex) > 0 ) {
+            previousNode2 = currentNode2;
+            currentNode2 = currentNode2->next;
+        }
+
+        /* insert new node at beginning of list */
+        if (previousNode2 == NULL) {
+            newNode2->next = graph->adjListArray[destIndex].head;
+            graph->adjListArray[destIndex].head = newNode2;
+        }
+        /* insert new node between previousNode2 and currentNode2 */
+        else {
+            previousNode2->next = newNode2;
+            newNode2->next = currentNode2;
+        }
+
         graph->adjListArray[destIndex].num_members++;
     }
 }
 
+/* Read each students exams and create adjaceny lists */
 void addEdges(Graph *graph){
     char *readingMode = "r";
 
@@ -221,29 +260,30 @@ void addEdges(Graph *graph){
         int i, j;
         for(i = 0; i < numberOfCoursesInLine - 1; i++){
             for(j = i + 1; j < numberOfCoursesInLine; j++){
+                /* Add an edge if this edge has not been added before */
                 if(!hasEdge(graph, tempArray[i], tempArray[j]))
                     addEdge(graph, tempArray[i], tempArray[j]);
             }
         }
-
-
-
-
     }
 }
 
 /* Function to print the adjacency list of graph*/
 void displayGraph(GraphPtr graph){
     int i;
+    printf("The Adjacency List\n");
+
     for (i = 0; i < graph->numberOfVertices; i++) {
         AdjListNodePtr adjListPtr = graph->adjListArray[i].head;
-        printf("\n%s: ", courseNames[i]);
+        printf("\n%-8s: ", courseNames[i]);
         while (adjListPtr) {
-            printf("%s -> ", adjListPtr->vertex);
+            printf("%-8s", adjListPtr->vertex);
+            if(adjListPtr->next != NULL) printf("- ");
             adjListPtr = adjListPtr->next;
         }
-        printf("NULL\n");
     }
+
+    printf("\n\n");
 }
 
 /*Destroys the graph*/
@@ -266,12 +306,12 @@ void destroyGraph(GraphPtr graph){
     }
 }
 
+/* The courses are stored by id (array index)
+   get the index of the course name */
 int getIndex(char *courseName){
     int i;
     for(i = 0; i < numberOfCourses; i++){
-        if(strcmp(courseNames[i], courseName) == 0){
-            return i;
-        }
+        if(strcmp(courseNames[i], courseName) == 0) return i;
     }
 
     return -1;
