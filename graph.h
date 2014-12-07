@@ -2,12 +2,13 @@
 #define _GRAPH_H_
 #define MAX_COURSES 32
 #define MAX_LENGTH 8
+#define FILENAME "input.txt"
 
 typedef enum {UNDIRECTED = 0, DIRECTED} GraphType;
 
 /* Adjacency list node */
 typedef struct adjlist_node {
-    char *vertex;                 // Index to adjacency lisk array
+    char vertex[MAX_LENGTH];                 // Index to adjacency lisk array
     struct adjlist_node *next;
 } AdjListNode, *AdjListNodePtr;
 

@@ -10,7 +10,7 @@
 void readCourses();
 void sortCourses();
 GraphPtr createGraph(int numberOfVertices, GraphType type);
-void addEdge(Graph *graph, char *src, char *dest);
+void addEdges(Graph *graph);
 void displayGraph(GraphPtr graph);
 void destroyGraph(GraphPtr graph);
 int getIndex(char *courseName);
@@ -23,18 +23,13 @@ char courseNames[MAX_COURSES][MAX_LENGTH];
 int numberOfCourses = 0;
 
 int main(void) {
-
-    // Counters
-    int i, j = 0;
-
     /* Read the courses from the input file and sort them */
     readCourses();
     sortCourses();
 
     /* Create a course graph */
     GraphPtr courseGraph = createGraph(numberOfCourses, UNDIRECTED);
-
-
+    addEdges(courseGraph);
 
     displayGraph(courseGraph);
     destroyGraph(courseGraph);
@@ -58,16 +53,14 @@ int doesCourseExist(char courseName[]){
 }
 
 void readCourses(){
-    // Filename and reading mode
-    char *filename = "input.txt";
     char *readingMode = "r";
 
     // Open the input file for reading
-    FILE *inputFile = fopen(filename, readingMode);
+    FILE *inputFile = fopen(FILENAME, readingMode);
 
     // If the file cannot be opened, give an error and exit the program
     if(inputFile == NULL){
-        printf("Cannot open the input file: %s\n\n", filename);
+        printf("Cannot open the input file: %s\n\n", FILENAME);
         exit(1);
     }
 
@@ -84,22 +77,25 @@ void readCourses(){
 
         /* walk through other tokens */
         while( token != NULL ) {
+            /* Remove the whitespaces */
             token = strstrip(token);
 
-            // If it doesn't exist, add it to the course list.
+            // If it doesn't exist, add it to the global course list.
             if(!doesCourseExist(token)){
                 strcpy(courseNames[numberOfCourses], token);
                 numberOfCourses++;
             }
 
+            /* get the next course name */
             token = strtok(NULL, ",");
         }
     }
 
+    /* close the file */
     fclose(inputFile);
 }
 
-// Sort the course names. There're a few courses, bubble sort seems right.
+// Sort the course names. There're a few courses, bubble sort seems appropriate.
 void sortCourses(){
     int i, k;
     int needNextPass = 1;
@@ -146,16 +142,30 @@ AdjListNodePtr createNode(char *vertex){
     if(!newNode)
         err_exit("Unable to allocate memory for new node");
 
-    newNode->vertex = vertex;
+    strcpy(newNode->vertex, vertex);
     newNode->next = NULL;
 
     return newNode;
 }
 
-/* Adds an edge to a graph*/
+int hasEdge(GraphPtr graph, char vertex1[], char vertex2[]){
+    int i;
+    for (i = 0; i < graph->numberOfVertices; i++) {
+        AdjListNodePtr adjListPtr = graph->adjListArray[i].head;
+        if(strcmp(courseNames[i], vertex1) == 0){
+            while (adjListPtr) {
+                if(strcmp(adjListPtr->vertex, vertex2) == 0) return 1;
+                adjListPtr = adjListPtr->next;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/* Add an edge to a graph*/
 void addEdge(Graph *graph, char *src, char *dest){
     int srcIndex = getIndex(src);
-    printf("srcIndex: %d", srcIndex);
 
     /* Add an edge from src to dst in the adjacency list*/
     AdjListNodePtr newNode = createNode(dest);
@@ -173,6 +183,55 @@ void addEdge(Graph *graph, char *src, char *dest){
     }
 }
 
+void addEdges(Graph *graph){
+    char *readingMode = "r";
+
+    // Open the input file for reading
+    FILE *inputFile = fopen(FILENAME, readingMode);
+
+    // If the file cannot be opened, give an error and exit the program
+    if(inputFile == NULL){
+        printf("Cannot open the input file: %s\n\n", FILENAME);
+        exit(1);
+    }
+
+    // Read the file line by line and store the course names in the 2D courseNames array.
+    char buffer[128];
+    char *previousToken, *token;
+    while (fgets (buffer, sizeof(buffer), inputFile)){
+        char *courses = strstr(buffer, ":") + 1;
+        courses = strstrip(courses);
+
+        char tempArray[MAX_COURSES][MAX_LENGTH];
+        int numberOfCoursesInLine = 0;
+
+        /* extract the course names off the line. get the first token */
+        token = strtok(courses, ",");
+
+        /* create an array that contains the courses in a single line. */
+        while( token != NULL ) {
+            /* Remove the whitespaces */
+            token = strstrip(token);
+            strcpy(tempArray[numberOfCoursesInLine++], token);
+
+            /* get the next course name */
+            token = strtok(NULL, ",");
+        }
+
+        int i, j;
+        for(i = 0; i < numberOfCoursesInLine - 1; i++){
+            for(j = i + 1; j < numberOfCoursesInLine; j++){
+                if(!hasEdge(graph, tempArray[i], tempArray[j]))
+                    addEdge(graph, tempArray[i], tempArray[j]);
+            }
+        }
+
+
+
+
+    }
+}
+
 /* Function to print the adjacency list of graph*/
 void displayGraph(GraphPtr graph){
     int i;
@@ -180,7 +239,7 @@ void displayGraph(GraphPtr graph){
         AdjListNodePtr adjListPtr = graph->adjListArray[i].head;
         printf("\n%s: ", courseNames[i]);
         while (adjListPtr) {
-            printf("%s->", adjListPtr->vertex);
+            printf("%s -> ", adjListPtr->vertex);
             adjListPtr = adjListPtr->next;
         }
         printf("NULL\n");
