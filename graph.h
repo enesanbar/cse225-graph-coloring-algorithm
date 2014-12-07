@@ -1,5 +1,7 @@
 #ifndef _GRAPH_H_
 #define _GRAPH_H_
+#define MAX_COURSES 32
+#define MAX_LENGTH 8
 
 typedef enum {UNDIRECTED = 0, DIRECTED} GraphType;
 
@@ -11,6 +13,7 @@ typedef struct adjlist_node {
 
 /* Adjacency list */
 typedef struct adjlist {
+    char *courseName;
     int num_members;
     AdjListNode *head;
 } AdjList, *AdjListPtr;
@@ -20,7 +23,7 @@ typedef struct adjlist {
 typedef struct graph {
     GraphType type;         // Directed or undirecteds
     int numberOfVertices;   // Number of vertices
-    AdjListPtr adjListArr;  // Adjacency list array
+    AdjList adjListArray[MAX_COURSES];  // Adjacency list array
 } Graph, *GraphPtr;
 
 /* Exit function to handle the fatal errors */

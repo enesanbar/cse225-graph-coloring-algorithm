@@ -1,13 +1,10 @@
 /*  CSE225 - Data Structures Project 3
     Enes ANBAR - 150113842              */
-    /* second_branch */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "graph.h"
-
-#define MAX_COURSES 32
-#define MAX_LENGTH 8
 
 // Function prototypes
 void readCourses();
@@ -37,7 +34,8 @@ int main(void) {
     /* Create a course graph */
     GraphPtr courseGraph = createGraph(numberOfCourses, UNDIRECTED);
 
-    printf("\nUNDIRECTED GRAPH");
+
+
     displayGraph(courseGraph);
     destroyGraph(courseGraph);
 
@@ -132,15 +130,11 @@ GraphPtr createGraph(int numberOfVertices, GraphType type){
     graph->numberOfVertices = numberOfVertices;
     graph->type = type;
 
-    /* Create an array of adjacency lists*/
-    graph->adjListArr = (AdjListPtr)malloc(numberOfVertices * sizeof(AdjList));
-    if(!graph->adjListArr)
-        err_exit("Unable to allocate memory for adjacency list array");
-
     int i;
     for(i = 0; i < numberOfVertices; i++){
-        graph->adjListArr[i].head = NULL;
-        graph->adjListArr[i].num_members = 0;
+        graph->adjListArray[i].head = NULL;
+        graph->adjListArray[i].num_members = 0;
+        graph->adjListArray[i].courseName = courseNames[i];
     }
 
     return graph;
@@ -152,7 +146,7 @@ AdjListNodePtr createNode(char *vertex){
     if(!newNode)
         err_exit("Unable to allocate memory for new node");
 
-    strcpy(newNode->vertex, vertex);
+    newNode->vertex = vertex;
     newNode->next = NULL;
 
     return newNode;
@@ -161,20 +155,21 @@ AdjListNodePtr createNode(char *vertex){
 /* Adds an edge to a graph*/
 void addEdge(Graph *graph, char *src, char *dest){
     int srcIndex = getIndex(src);
+    printf("srcIndex: %d", srcIndex);
 
     /* Add an edge from src to dst in the adjacency list*/
     AdjListNodePtr newNode = createNode(dest);
-    newNode->next = graph->adjListArr[srcIndex].head;
-    graph->adjListArr[srcIndex].head = newNode;
-    graph->adjListArr[srcIndex].num_members++;
+    newNode->next = graph->adjListArray[srcIndex].head;
+    graph->adjListArray[srcIndex].head = newNode;
+    graph->adjListArray[srcIndex].num_members++;
 
     if(graph->type == UNDIRECTED){
         int destIndex = getIndex(dest);
         /* Add an edge from dest to src also*/
         newNode = createNode(src);
-        newNode->next = graph->adjListArr[destIndex].head;
-        graph->adjListArr[destIndex].head = newNode;
-        graph->adjListArr[destIndex].num_members++;
+        newNode->next = graph->adjListArray[destIndex].head;
+        graph->adjListArray[destIndex].head = newNode;
+        graph->adjListArray[destIndex].num_members++;
     }
 }
 
@@ -182,7 +177,7 @@ void addEdge(Graph *graph, char *src, char *dest){
 void displayGraph(GraphPtr graph){
     int i;
     for (i = 0; i < graph->numberOfVertices; i++) {
-        AdjListNodePtr adjListPtr = graph->adjListArr[i].head;
+        AdjListNodePtr adjListPtr = graph->adjListArray[i].head;
         printf("\n%s: ", courseNames[i]);
         while (adjListPtr) {
             printf("%s->", adjListPtr->vertex);
@@ -195,19 +190,17 @@ void displayGraph(GraphPtr graph){
 /*Destroys the graph*/
 void destroyGraph(GraphPtr graph){
     if(graph){
-        if(graph->adjListArr){
+        if(graph->adjListArray){
             int v;
             /*Free up the nodes*/
             for (v = 0; v < graph->numberOfVertices; v++) {
-                AdjListNodePtr adjListPtr = graph->adjListArr[v].head;
+                AdjListNodePtr adjListPtr = graph->adjListArray[v].head;
                 while (adjListPtr){
                     AdjListNodePtr tmp = adjListPtr;
                     adjListPtr = adjListPtr->next;
                     free(tmp);
                 }
             }
-            /*Free the adjacency list array*/
-            free(graph->adjListArr);
         }
         /*Free the graph*/
         free(graph);
