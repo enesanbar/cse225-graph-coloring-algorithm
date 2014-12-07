@@ -5,7 +5,7 @@ typedef enum {UNDIRECTED = 0, DIRECTED} GraphType;
 
 /* Adjacency list node */
 typedef struct adjlist_node {
-    int vertex;                 // Index to adjacency lisk array
+    char *vertex;                 // Index to adjacency lisk array
     struct adjlist_node *next;
 } AdjListNode, *AdjListNodePtr;
 

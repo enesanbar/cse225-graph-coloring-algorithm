@@ -9,28 +9,29 @@
 #define MAX_LENGTH 8
 
 // Function prototypes
-void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses);
-void sortCourses(char courseNames[][MAX_LENGTH], int numberOfCourses);
+void readCourses();
+void sortCourses();
 GraphPtr createGraph(int numberOfVertices, GraphType type);
-void addEdge(Graph *graph, int src, int dest);
+void addEdge(Graph *graph, char *src, char *dest);
 void displayGraph(GraphPtr graph);
 void destroyGraph(GraphPtr graph);
+int getIndex(char *courseName);
 
 char *strstrip(char *s);
 void toLowerCase(char *string);
 
+// Course names. There can be max 32 courses with the length of 8
+char courseNames[MAX_COURSES][MAX_LENGTH];
+int numberOfCourses = 0;
+
 int main(void) {
 
-    // Counter
-    int i = 0;
-
-    // Course names. There can be max 32 courses with the length of 8
-    char courseNames[MAX_COURSES][MAX_LENGTH];
-    int numberOfCourses = 0;
+    // Counters
+    int i, j = 0;
 
     /* Read the courses from the input file and sort them */
-    readCourses(courseNames, &numberOfCourses);
-    sortCourses(courseNames, numberOfCourses);
+    readCourses();
+    sortCourses();
 
     /* Create a course graph */
     GraphPtr courseGraph = createGraph(numberOfCourses, UNDIRECTED);
@@ -44,7 +45,7 @@ int main(void) {
 
 /* While reading from file, checks if the course has been read yet
    Note: The compiler need to know the 2nd dimension of the two dimensional array */
-int doesCourseExist(char courseNames[][MAX_LENGTH], char courseName[], int numberOfCourses){
+int doesCourseExist(char courseName[]){
     if(numberOfCourses == 0) return 0;
 
     int i;
@@ -57,7 +58,7 @@ int doesCourseExist(char courseNames[][MAX_LENGTH], char courseName[], int numbe
     return 0;
 }
 
-void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses){
+void readCourses(){
     // Filename and reading mode
     char *filename = "input.txt";
     char *readingMode = "r";
@@ -75,7 +76,7 @@ void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses){
     char buffer[128];
     char *token;
     while (fgets (buffer, sizeof(buffer), inputFile)) {
-        // Get the part of the line after the color ':'
+        // Get the part of the line after the colon ':'
         char *courses = strstr(buffer, ":") + 1;
         courses = strstrip(courses);  // trim the whitespaces
 
@@ -87,18 +88,20 @@ void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses){
             token = strstrip(token);
 
             // If it doesn't exist, add it to the course list.
-            if(!doesCourseExist(courseNames, token, *numberOfCourses)){
-                strcpy(courseNames[*numberOfCourses], token);
-                (*numberOfCourses)++;
+            if(!doesCourseExist(token)){
+                strcpy(courseNames[numberOfCourses], token);
+                numberOfCourses++;
             }
 
             token = strtok(NULL, ",");
         }
     }
+
+    fclose(inputFile);
 }
 
 // Sort the course names. There're a few courses, bubble sort seems right.
-void sortCourses(char courseNames[][MAX_LENGTH], int numberOfCourses){
+void sortCourses(){
     int i, k;
     int needNextPass = 1;
 
@@ -143,31 +146,34 @@ GraphPtr createGraph(int numberOfVertices, GraphType type){
 }
 
 /* Function to create an adjacency list node*/
-AdjListNodePtr createNode(int v){
+AdjListNodePtr createNode(char *vertex){
     AdjListNodePtr newNode = (AdjListNodePtr)malloc(sizeof(AdjListNode));
     if(!newNode)
         err_exit("Unable to allocate memory for new node");
 
-    newNode->vertex = v;
+    strcpy(newNode->vertex, vertex);
     newNode->next = NULL;
 
     return newNode;
 }
 
 /* Adds an edge to a graph*/
-void addEdge(Graph *graph, int src, int dest){
+void addEdge(Graph *graph, char *src, char *dest){
+    int srcIndex = getIndex(src);
+
     /* Add an edge from src to dst in the adjacency list*/
     AdjListNodePtr newNode = createNode(dest);
-    newNode->next = graph->adjListArr[src].head;
-    graph->adjListArr[src].head = newNode;
-    graph->adjListArr[src].num_members++;
+    newNode->next = graph->adjListArr[srcIndex].head;
+    graph->adjListArr[srcIndex].head = newNode;
+    graph->adjListArr[srcIndex].num_members++;
 
     if(graph->type == UNDIRECTED){
+        int destIndex = getIndex(dest);
         /* Add an edge from dest to src also*/
         newNode = createNode(src);
-        newNode->next = graph->adjListArr[dest].head;
-        graph->adjListArr[dest].head = newNode;
-        graph->adjListArr[dest].num_members++;
+        newNode->next = graph->adjListArr[destIndex].head;
+        graph->adjListArr[destIndex].head = newNode;
+        graph->adjListArr[destIndex].num_members++;
     }
 }
 
@@ -176,9 +182,9 @@ void displayGraph(GraphPtr graph){
     int i;
     for (i = 0; i < graph->numberOfVertices; i++) {
         AdjListNodePtr adjListPtr = graph->adjListArr[i].head;
-        printf("\n%d: ", i);
+        printf("\n%s: ", courseNames[i]);
         while (adjListPtr) {
-            printf("%d->", adjListPtr->vertex);
+            printf("%s->", adjListPtr->vertex);
             adjListPtr = adjListPtr->next;
         }
         printf("NULL\n");
@@ -205,6 +211,17 @@ void destroyGraph(GraphPtr graph){
         /*Free the graph*/
         free(graph);
     }
+}
+
+int getIndex(char *courseName){
+    int i;
+    for(i = 0; i < numberOfCourses; i++){
+        if(strcmp(courseNames[i], courseName) == 0){
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 // Trim the space characters from the string.
