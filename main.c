@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "graph.h"
 
 #define MAX_COURSES 32
 #define MAX_LENGTH 8
@@ -10,6 +11,11 @@
 // Function prototypes
 void readCourses(char courseNames[][MAX_LENGTH], int *numberOfCourses);
 void sortCourses(char courseNames[][MAX_LENGTH], int numberOfCourses);
+GraphPtr createGraph(int numberOfVertices, GraphType type);
+void addEdge(Graph *graph, int src, int dest);
+void displayGraph(GraphPtr graph);
+void destroyGraph(GraphPtr graph);
+
 char *strstrip(char *s);
 void toLowerCase(char *string);
 
@@ -21,8 +27,17 @@ int main(void) {
     // Course names. There can be max 32 courses with the length of 8
     char courseNames[MAX_COURSES][MAX_LENGTH];
     int numberOfCourses = 0;
+
+    /* Read the courses from the input file and sort them */
     readCourses(courseNames, &numberOfCourses);
     sortCourses(courseNames, numberOfCourses);
+
+    /* Create a course graph */
+    GraphPtr courseGraph = createGraph(numberOfCourses, UNDIRECTED);
+
+    printf("\nUNDIRECTED GRAPH");
+    displayGraph(courseGraph);
+    destroyGraph(courseGraph);
 
     return 0;
 }
@@ -101,6 +116,94 @@ void sortCourses(char courseNames[][MAX_LENGTH], int numberOfCourses){
                 needNextPass = 1;
             }
         }
+    }
+}
+
+/* Function to create a graph with n vertices; Creates both directed and undirected graphs */
+GraphPtr createGraph(int numberOfVertices, GraphType type){
+    GraphPtr graph = (GraphPtr)malloc(sizeof(Graph));
+    if(graph == NULL)
+        err_exit("Unable to allocate memory for graph");
+
+    graph->numberOfVertices = numberOfVertices;
+    graph->type = type;
+
+    /* Create an array of adjacency lists*/
+    graph->adjListArr = (AdjListPtr)malloc(numberOfVertices * sizeof(AdjList));
+    if(!graph->adjListArr)
+        err_exit("Unable to allocate memory for adjacency list array");
+
+    int i;
+    for(i = 0; i < numberOfVertices; i++){
+        graph->adjListArr[i].head = NULL;
+        graph->adjListArr[i].num_members = 0;
+    }
+
+    return graph;
+}
+
+/* Function to create an adjacency list node*/
+AdjListNodePtr createNode(int v){
+    AdjListNodePtr newNode = (AdjListNodePtr)malloc(sizeof(AdjListNode));
+    if(!newNode)
+        err_exit("Unable to allocate memory for new node");
+
+    newNode->vertex = v;
+    newNode->next = NULL;
+
+    return newNode;
+}
+
+/* Adds an edge to a graph*/
+void addEdge(Graph *graph, int src, int dest){
+    /* Add an edge from src to dst in the adjacency list*/
+    AdjListNodePtr newNode = createNode(dest);
+    newNode->next = graph->adjListArr[src].head;
+    graph->adjListArr[src].head = newNode;
+    graph->adjListArr[src].num_members++;
+
+    if(graph->type == UNDIRECTED){
+        /* Add an edge from dest to src also*/
+        newNode = createNode(src);
+        newNode->next = graph->adjListArr[dest].head;
+        graph->adjListArr[dest].head = newNode;
+        graph->adjListArr[dest].num_members++;
+    }
+}
+
+/* Function to print the adjacency list of graph*/
+void displayGraph(GraphPtr graph){
+    int i;
+    for (i = 0; i < graph->numberOfVertices; i++) {
+        AdjListNodePtr adjListPtr = graph->adjListArr[i].head;
+        printf("\n%d: ", i);
+        while (adjListPtr) {
+            printf("%d->", adjListPtr->vertex);
+            adjListPtr = adjListPtr->next;
+        }
+        printf("NULL\n");
+    }
+}
+
+/*Destroys the graph*/
+void destroyGraph(GraphPtr graph){
+    if(graph){
+        if(graph->adjListArr){
+            int v;
+            /*Free up the nodes*/
+            for (v = 0; v < graph->numberOfVertices; v++) {
+                AdjListNodePtr adjListPtr = graph->adjListArr[v].head;
+                while (adjListPtr){
+                    AdjListNodePtr tmp = adjListPtr;
+                    adjListPtr = adjListPtr->next;
+                    free(tmp);
+                }
+            }
+            /*Free the adjacency list array*/
+            free(graph->adjListArr);
+        }
+        /*Free the graph*/
+        free(graph);
     }
 }
 
