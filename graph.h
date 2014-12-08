@@ -15,6 +15,8 @@ typedef struct adjlist_node {
 /* Adjacency list */
 typedef struct adjlist {
     char *courseName;
+    char *color;
+    int visited;
     int num_members;
     AdjListNode *head;
 } AdjList, *AdjListPtr;
@@ -26,6 +28,14 @@ typedef struct graph {
     int numberOfVertices;   // Number of vertices
     AdjList adjListArray[MAX_COURSES];  // Adjacency list array
 } Graph, *GraphPtr;
+
+struct queueNode {
+    AdjList *adjList;
+    struct queueNode *nextNode;
+};
+
+typedef struct queueNode QueueNode;
+typedef QueueNode *QueueNodePtr;
 
 /* Exit function to handle the fatal errors */
 __inline void err_exit(char *msg){

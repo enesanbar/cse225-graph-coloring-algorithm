@@ -13,13 +13,14 @@ GraphPtr createGraph(int numberOfVertices, GraphType type);
 void addEdges(Graph *graph);
 void displayGraph(GraphPtr graph);
 void destroyGraph(GraphPtr graph);
-int getIndex(char *courseName);
+void colorWithBFS(Graph *graph);
+void printFinalSchedule(Graph *graph);
 
 char *strstrip(char *s);
-void toLowerCase(char *string);
 
 // Course names. There can be max 32 courses with the length of 8
 char courseNames[MAX_COURSES][MAX_LENGTH];
+char colors[3][8] = {"black", "white", "gray"};
 int numberOfCourses = 0;
 
 int main(void) {
@@ -29,9 +30,19 @@ int main(void) {
 
     /* Create a course graph */
     GraphPtr courseGraph = createGraph(numberOfCourses, UNDIRECTED);
+
+    /* Add edges to the graph*/
     addEdges(courseGraph);
 
+    /* Display the adjacency list */
     displayGraph(courseGraph);
+
+    /* Apply coloring algorithn to the graph */
+    colorWithBFS(courseGraph);
+
+    /* print the final schedule */
+    printFinalSchedule(courseGraph);
+
     destroyGraph(courseGraph);
 
     return 0;
@@ -130,7 +141,9 @@ GraphPtr createGraph(int numberOfVertices, GraphType type){
     for(i = 0; i < numberOfVertices; i++){
         graph->adjListArray[i].head = NULL;
         graph->adjListArray[i].num_members = 0;
+        graph->adjListArray[i].visited = 0;
         graph->adjListArray[i].courseName = courseNames[i];
+        graph->adjListArray[i].color = "unvisited";
     }
 
     return graph;
@@ -162,6 +175,17 @@ int hasEdge(GraphPtr graph, char vertex1[], char vertex2[]){
     }
 
     return 0;
+}
+
+/* The courses are stored by id (array index)
+   get the index of the course name */
+int getIndex(char *courseName){
+    int i;
+    for(i = 0; i < numberOfCourses; i++){
+        if(strcmp(courseNames[i], courseName) == 0) return i;
+    }
+
+    return -1;
 }
 
 /* add a single edge to the graph*/
@@ -286,6 +310,132 @@ void displayGraph(GraphPtr graph){
     printf("\n\n");
 }
 
+int isEmpty(QueueNodePtr headPtr){
+    return headPtr == NULL;
+}
+
+/* equeue for the breadth first search algorithm */
+void enqueu(QueueNodePtr *headPtr, QueueNodePtr *tailPtr, AdjList *adjList){
+    QueueNodePtr newPtr;
+
+    newPtr = malloc(sizeof(QueueNode));
+    if(newPtr != NULL){
+        newPtr->adjList = adjList;
+        newPtr->nextNode = NULL;
+
+        if(isEmpty(*headPtr)) *headPtr = newPtr;
+        else (*tailPtr)->nextNode = newPtr;
+
+        *tailPtr = newPtr;
+    } else {
+        err_exit("The adjaceny list not inserted. No memory available.\n");
+    }
+}
+
+/* dequeue for the breadth first search algorithm */
+AdjListPtr dequeu(QueueNodePtr *headPtr, QueueNodePtr *tailPtr){
+    AdjList *adjList;
+    QueueNodePtr tempPtr;
+
+    adjList = (*headPtr)->adjList;
+    tempPtr = *headPtr;
+    *headPtr = (*headPtr)->nextNode;
+
+    /* if queue is empty */
+    if(*headPtr == NULL){
+        *tailPtr == NULL;
+    }
+
+    free(tempPtr);
+    return adjList;
+}
+
+/* Check if a color has been used in an adjaceny list */
+int doesAdjListHaveThisColor(Graph *graph, AdjList *adjList, char *color){
+    int i;
+    int exist = 0;
+    AdjListNode *temp = adjList->head;
+    for(i = 0; i < adjList->num_members; i++){
+        AdjList *vertex = &(graph->adjListArray[getIndex(temp->vertex)]);
+        if(strcmp(vertex->color, color) == 0) exist = 1;
+        temp = temp->next;
+    }
+    return exist;
+}
+
+/* Color the graph using breadth first search */
+void colorWithBFS(Graph *graph){
+    int colorIndex = 0;
+
+    QueueNodePtr headPtr = NULL; /* initialize headPtr */
+    QueueNodePtr tailPtr = NULL; /* initialize tailPtr */
+
+    /* Give the first course the first color */
+    AdjList *adjList = &(graph->adjListArray[0]);
+    adjList->visited = 1;
+    adjList->color = colors[colorIndex];
+
+    enqueu(&headPtr, &tailPtr, adjList);
+
+    int i;
+    while(headPtr){
+        AdjList *u = dequeu(&headPtr, &tailPtr);
+
+        AdjListNode *v = u->head;
+
+        /* Go through all of the adjacent courses and assign color to them */
+        for(i = 0; i < u->num_members; i++){
+            colorIndex = 0;
+            int index = getIndex(v->vertex);
+            AdjList *temp = &(graph->adjListArray[index]);
+
+            /* If the node han not been visited yet, visit and do the following */
+            if(temp->visited == 0){
+                temp->visited = 1;
+
+                /* Find an appropriate color for this node */
+                while(doesAdjListHaveThisColor(graph, temp, colors[colorIndex])) colorIndex++;
+                temp->color = colors[colorIndex];
+                graph->adjListArray[index] = *temp;
+                colorIndex = 0;
+
+                /* Add this node to the queue */
+                enqueu(&headPtr, &tailPtr, &(graph->adjListArray[index]));
+            }
+            v = v->next;    // Go to the next adjacent node
+            colorIndex = 0; // reset the color index
+        }
+        colorIndex = 0; // reset the color index
+
+    }
+}
+
+void printFinalSchedule(Graph *graph){
+    int i;
+    printf("Final Exam Period 1 => ");
+    for(i = 0; i < graph->numberOfVertices; i++){
+        if(strcmp(graph->adjListArray[i].color, "black") == 0){
+            printf("%s ", graph->adjListArray[i].courseName);
+        }
+    }
+
+    printf("\n\nFinal Exam Period 2 => ");
+    for(i = 0; i < graph->numberOfVertices; i++){
+        if(strcmp(graph->adjListArray[i].color, "white") == 0){
+            printf("%s ", graph->adjListArray[i].courseName);
+        }
+    }
+
+    printf("\n\nFinal Exam Period 3 => ");
+    for(i = 0; i < graph->numberOfVertices; i++){
+        if(strcmp(graph->adjListArray[i].color, "gray") == 0){
+            printf("%s ", graph->adjListArray[i].courseName);
+        }
+    }
+
+    printf("\n\n");
+}
+
 /*Destroys the graph*/
 void destroyGraph(GraphPtr graph){
     if(graph){
@@ -304,17 +454,6 @@ void destroyGraph(GraphPtr graph){
         /*Free the graph*/
         free(graph);
     }
-}
-
-/* The courses are stored by id (array index)
-   get the index of the course name */
-int getIndex(char *courseName){
-    int i;
-    for(i = 0; i < numberOfCourses; i++){
-        if(strcmp(courseNames[i], courseName) == 0) return i;
-    }
-
-    return -1;
 }
 
 // Trim the space characters from the string.
@@ -348,13 +487,4 @@ char *strstrip(char *str){
     }
 
     return str;
-}
-
-/* To perform case-insensitive comparison, make characters lowercase */
-void toLowerCase(char *string){
-    int i = 0;
-    while(string[i] != '\0'){
-        string[i] = (char)tolower(string[i]);
-        i++;
-    }
 }
