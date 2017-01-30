@@ -131,8 +131,10 @@ void sortCourses(){
 /* Function to create a graph with n vertices; Creates both directed and undirected graphs */
 GraphPtr createGraph(int numberOfVertices, GraphType type){
     GraphPtr graph = (GraphPtr)malloc(sizeof(Graph));
-    if(graph == NULL)
-        err_exit("Unable to allocate memory for graph");
+    if(graph == NULL) {
+    	printf("Unable to allocate memory for graph\n");
+    	return 0;
+    }
 
     graph->numberOfVertices = numberOfVertices;
     graph->type = type;
@@ -152,8 +154,10 @@ GraphPtr createGraph(int numberOfVertices, GraphType type){
 /* Function to create an adjacency list node*/
 AdjListNodePtr createNode(char *vertex){
     AdjListNodePtr newNode = (AdjListNodePtr)malloc(sizeof(AdjListNode));
-    if(!newNode)
-        err_exit("Unable to allocate memory for new node");
+    if(!newNode){
+    	printf("Unable to allocate memory for new node\n");
+    	return 0;
+    }
 
     strcpy(newNode->vertex, vertex);
     newNode->next = NULL;
@@ -328,7 +332,8 @@ void enqueu(QueueNodePtr *headPtr, QueueNodePtr *tailPtr, AdjList *adjList){
 
         *tailPtr = newPtr;
     } else {
-        err_exit("The adjaceny list not inserted. No memory available.\n");
+        printf("The adjaceny list not inserted. No memory available.\n");
+        return 0;
     }
 }
 
