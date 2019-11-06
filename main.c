@@ -333,7 +333,7 @@ void enqueu(QueueNodePtr *headPtr, QueueNodePtr *tailPtr, AdjList *adjList){
         *tailPtr = newPtr;
     } else {
         printf("The adjaceny list not inserted. No memory available.\n");
-        return 0;
+        exit(1);
     }
 }
 
